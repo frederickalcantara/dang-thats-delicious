@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const promisify = require('es6-promisify');
+const mail = require('../handlers/mail');
 
 exports.login = passport.authenticate('local', {
    failureRedirect: '/login' ,
@@ -40,7 +41,13 @@ exports.forgot = async (req, res) => {
     await user.save();
     // Send them an email with the token
     const resetURL = `http://${req.headers.host}/account/reset/${user.resetPasswordToken}`;
-    req.flash('success', `You have been email a password reset link. ${resetURL}`);
+    await mail.send({
+        user,
+        subject: 'Password Reset',
+        resetURL,
+        filename: 'password-reset'
+    });
+    req.flash('success', `You have been email a password reset link.`);
     // Redirect to login page
     res.redirect('/login');
 };
@@ -50,17 +57,15 @@ const validateUser = async (req, res) => {
         resetPasswordToken: req.params.token,
         resetPasswordExpires: { $gt: Date.now() }
     });
-
     if (!user) {
         req.flash('error', 'Password reset is invalid or has expired');
         return res.redirect('/login');
     }
-
     return user;
 }
 
 exports.reset = async (req, res) => {
-    validateUser();
+    validateUser(req, res);
     // if there is a user, show the reset password form
     res.render('reset', { title: 'Reset your Password' });
 };
@@ -75,8 +80,7 @@ exports.confirmedPasswords = (req, res, next) => {
 }
 
 exports.update = async (req, res) => {
-    const user = validateUser();
-    console.log(user);
+    const user = await validateUser(req, res);
     const setPassword = promisify(user.setPassword, user);
     await setPassword(req.body.password);
     user.resetPasswordToken = undefined;
