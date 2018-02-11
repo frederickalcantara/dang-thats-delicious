@@ -3,6 +3,7 @@ const Store = mongoose.model("Store");
 const multer = require("multer");
 const jimp = require("jimp");
 const uuid = require("uuid");
+const parse5 = require("parse5");
 
 const multerOptions = {
   storage: multer.memoryStorage(),
@@ -62,9 +63,9 @@ exports.getStores = async (req, res) => {
 
 const confirmOwner = (store, user) => {
   if (!store.author.equals(user._id)) {
-    throw Error('You must own a store in order to edit it!');
+    throw Error("You must own a store in order to edit it!");
   }
-}
+};
 
 exports.editStore = async (req, res) => {
   //  1. Find the store given the ID
@@ -96,7 +97,9 @@ exports.updateStore = async (req, res) => {
 };
 
 exports.getStoreBySlug = async (req, res, next) => {
-  const store = await Store.findOne({ slug: req.params.slug }).populate('author');
+  const store = await Store.findOne({ slug: req.params.slug }).populate(
+    "author"
+  );
   if (!store) return next();
   res.render("store", { store, title: store.name });
 };
@@ -113,19 +116,22 @@ exports.getStoreByTag = async (req, res, next) => {
 
 exports.searchStores = async (req, res) => {
   const stores = await Store
-  // first find stores that match
-  .find({
-    $text: {
-      $search: req.query.q,
-    }
-  }, {
-    score: { $meta: 'textScore' }
-  })
-  // then sort them
-  .sort({
-    score: { $meta: 'textScore' }
-  })
-  // limit to only 5 results
-  .limit(5);
+    // first find stores that match
+    .find(
+      {
+        $text: {
+          $search: req.query.q
+        }
+      },
+      {
+        score: { $meta: "textScore" }
+      }
+    )
+    // then sort them
+    .sort({
+      score: { $meta: "textScore" }
+    })
+    // limit to only 5 results
+    .limit(5);
   res.json(stores);
-}
+};
