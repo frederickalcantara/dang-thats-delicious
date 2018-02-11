@@ -82,12 +82,8 @@ storeSchema.pre("save", async function(next) {
   });
 
   this.description = await sanitizeHtml(this.description, {
-    allowedTags: ["b", "strong", "i", "em", "ol", "ul", "li", "strike"],
+    allowedTags: [],
     allowedAttributes: [],
-    transformTags: {
-      b: "strong",
-      i: "em"
-    }
   });
 
   next();
